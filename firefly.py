@@ -42,7 +42,7 @@ class Firefly(object):
         for i in self.X:
             total_demand, total_capacity = 0, 0
             for j in range(len(i)):
-                if j % 2 = 0:
+                if j % 2 == 0:
                     total_capacity = total_capacity + self.fleet_capacity[i[j]]
                 else:
                     total_demand = total_demand + self.data_outlet["Demand"][i[j]]
