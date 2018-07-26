@@ -33,13 +33,13 @@ class Firefly(object):
         self.fitness_outlet = get_fitness_outlet() 
 
         # fleet
-        self.fleet_name = ["Truck", "Van", "Triseda", "Motor"]
+        self.fleet_dict = {"Truck":1, "Van":2, "Triseda":3, "Motor":4}
         self.fleet_capacity = [30, 15, 7, 3]
 
     def get_x_fcs(self):
         # variable x untuk fcs setiap column (total demand/fleet capacity)
         # bentuknya list sebanyak X
-        
+
         x_fcs = []
         for i in self.X:
             total_demand, total_capacity = 0, 0
@@ -55,17 +55,8 @@ class Firefly(object):
         # variable x untuk oas setiap column match(accessibily <> fleet)
         # bentuknya list sebanyak X
 
-        self.data_outlet["accessibility_code"] = 0
-        if self.data_outlet["accessibility"] == "Truck":
-            self.data_outlet["accessibility_code"] = 1
-        elif self.data_outlet["accessibility"] == "Van":
-            self.data_outlet["accessibility_code"] = 2
-        elif self.data_outlet["accessibility"] == "Triseda":
-            self.data_outlet["accessibility_code"] = 3
-        else:
-            self.data_outlet["accessibility_code"] = 4
-
-        list_access = list(self.data_outlet["accessibility_code"])
+        self.data_outlet.replace({"accessibility":self.fleet_dict})
+        list_access = list(self.data_outlet["accessibility"])
         
         x_oas = []
         for i in self.X:
