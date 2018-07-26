@@ -1,6 +1,7 @@
 from math import exp
 import numpy as np
 import pandas as pd
+import time
 
 individu = np.array([
     [ 4, 12,  4,  5,  2,  8,  4,  4,  4, 13,  4,  2,  2,  7,  2, 11, 3, 15,  2,  3,  4,  9,  1,  6,  2,  1,  1, 14,  4, 10],
@@ -36,78 +37,90 @@ class Firefly(object):
         self.fleet_dict = {"Truck":1, "Van":2, "Triseda":3, "Motor":4}
         self.fleet_capacity = [30, 15, 7, 3]
 
-    def get_x_fcs(self):
-        # variable x untuk fcs setiap column (total demand/fleet capacity)
-        # bentuknya list sebanyak X
+    def get_x_fcs(self, xi):
+        # variable x untuk fcs setiap anggota individu (total demand/fleet capacity)
+        # berbentuk float
 
-        x_fcs = []
-        for i in self.X:
-            total_demand, total_capacity = 0, 0
-            for j in range(len(i)):
-                if j % 2 == 0:
-                    total_capacity = total_capacity + self.fleet_capacity[i[j]]
-                else:
-                    total_demand = total_demand + self.data_outlet["Demand"][i[j]]
-            x_fcs.append(total_demand/total_capacity)
-        return x_fcs
+        total_demand, total_capacity = 0, 0
+        for i in range(len(xi)):
+            if i % 2 == 0:
+                total_capacity = total_capacity + self.fleet_capacity[xi[i]]
+            else:
+                total_demand = total_demand + self.data_outlet["Demand"][xi[i]]
+        return total_demand/total_capacity
 
-    def get_x_oas(self):
-        # variable x untuk oas setiap column match(accessibily <> fleet)
-        # bentuknya list sebanyak X
+    def get_x_oas(self, xi):
+        # variable x untuk oas setiap anggota individu match(accessibily <> fleet)
+        # berbentuk float
 
         self.data_outlet.replace({"accessibility":self.fleet_dict})
         list_access = list(self.data_outlet["accessibility"])
         
-        x_oas = []
-        for i in self.X:
-            is_match = 0
-            for j in range(len(i)):
-                if j % 2 != 0:
-                    if list_access[i[j + 1]] ==  i[j]:
-                        is_match = is_match + 1
-            x_oas.append(is_match/(len(i)/2))
-        return x_oas
+        is_match = 0
+        for i in range(len(xi)):
+            if i % 2 != 0:
+                if list_access[x[i + 1]] ==  x[i]:
+                    is_match = is_match + 1
+        return is_match/(len(xi)/2)
 
-    def fitness_fcs(self, x):
+    def get_x_odws(self, xi):
+        return None
+
+    def get_x_fdws(self, xi):
+        return None
+
+    def fitness_fcs(self, xi):
         """
             Fleet Capacity Score (FCS)
         """
+        x = get_x_oas(xi)
         k, x0 = 15, 0.5
-        return 1/(1 + exp(-k*(x-x0)))
         
-    def fitness_odws(self, x):
+        return [1/(1 + exp(-k*(i-x0))) for i in x]
+        
+    def fitness_odws(self, xi):
         """
             Outlet Delivery Window Score (ODWS)
         """
-        return x^3*(self.number_outlet - 
-                        (x*(self.number_outlet-1)/100)
-                    )
+        x = get_x_odws(xi)
 
-    def fitness_fdws(self, x):
+        return [i^3*(self.number_outlet - 
+                        (i*(self.number_outlet-1)/100)
+                    ) for i in x]
+
+    def fitness_fdws(self, xi):
         """
             Fleet Delivery Window Score (FDWS)
         """
+        x = get_x_fdws(xi)
         k, x0 = -10, 0.5
-        return 1/(1 + exp(-k*(x-x0)))
 
-    def fitness_oas(self, x):
+        return [1/(1 + exp(-k*(i-x0))) for i in x]
+
+    def fitness_oas(self, xi):
         """
             Outlet Accessibility Score (OAS)
         """
-        return x^3
+        x = get_x_oas(xi)
+        return [i^3 for i in x]
 
-    def get_fitness_outlet(self, x):
+    def get_fitness(self, xi):
         # Total fitness
-        return (fitness_fcs(x) + fitness_odws(x) +
-                fitness_fdws(x) + fitness_oas(x))
+
+        f1 = fitness_fcs(xi)
+        f2 = fitness_fdws(xi)
+        f3 = fitness_oas(xi)
+        f4 = fitness_odws(xi)
+
+        return [f1[i] + f2[i] + f3[i] + f4[i] for i in range(len(f1))]
     
-    def hamming_distance(c1, c2):
+    def hamming_distance(self, xi, xj):
         # Hamming Distance
-        if len(c1) != len(c2):
+        if len(xi) != len(xj):
             raise ValueError("Panjang kedua cluster tidak sama!")
         count = 0
-        for i in range(len(c1)):
-            count += (c1[i] != c2[i])
+        for i in range(len(xi)):
+            count += (xi[i] != xj[i])
         return count
     
     def random(self, r_ij):
@@ -115,6 +128,23 @@ class Firefly(object):
         return np.random.randint(low=2, r_ij*self.gamma, size=1)
 
     def fly(self):
+        
+        I = [get_fitness(xi) for xi in self.X]
 
+        # Maximal 600 detik untuk running
+        max_time = 600 
+        start_time = time.time()
+        while (time.time() - start_time) < max_time:
+            for i in range(len(self.X)):
+                for j in range(len(self.X)):
+                    if i != j:
+                        if I[i] < I[j]:
+                            r_ij = hamming_distance(x[i], x[j])
+                            n = random(r_ij)
+
+
+            
+
+            
 
 
